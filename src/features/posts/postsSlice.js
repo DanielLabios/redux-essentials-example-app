@@ -33,6 +33,14 @@ export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
 //   },
 // ]
 
+export const addNewPost = createAsyncThunk(
+  'post/addNewPost',
+  async (initialPost) => {
+    const response = await client.post('/fakeApi/posts', { post: initialPost })
+    return response.post
+  }
+)
+
 const postsSlice = createSlice({
   name: 'posts',
   initialState,
@@ -44,23 +52,26 @@ const postsSlice = createSlice({
         existingPost.reactions[reaction]++
       }
     },
-    postAdded: {
-      reducer(state, action) {
-        state.posts.push(action.payload)
-      },
-      prepare(title, content, userId) {
-        return {
-          payload: {
-            id: nanoid(),
-            date: new Date().toISOString(),
-            title,
-            content,
-            user: userId,
-            reactions: { thumbsUp: 0, hooray: 0, heart: 0, rocket: 0, eyes: 0 },
-          },
-        }
-      },
-    },
+
+    // Hard Coded Version replaced with extraReducer addNewPost
+    // postAdded: {
+    //   reducer(state, action) {
+    //     state.posts.push(action.payload)
+    //   },
+    //   prepare(title, content, userId) {
+    //     return {
+    //       payload: {
+    //         id: nanoid(),
+    //         date: new Date().toISOString(),
+    //         title,
+    //         content,
+    //         user: userId,
+    //         reactions: { thumbsUp: 0, hooray: 0, heart: 0, rocket: 0, eyes: 0 },
+    //       },
+    //     }
+    //   },
+    // },
+
     postUpdated(state, action) {
       const { id, title, content, reactions } = action.payload
       const existingPost = state.posts.find((post) => post.id === id)
@@ -80,6 +91,15 @@ const postsSlice = createSlice({
       state.posts = state.posts.concat(action.payload)
     },
     [fetchPosts.rejected]: (state, action) => {
+      state.status = 'failed'
+    },
+    [addNewPost.pending]: (state, action) => {
+      state.status = 'loading'
+    },
+    [addNewPost.fulfilled]: (state, action) => {
+      state.posts.push(action.payload)
+    },
+    [addNewPost.rejected]: (state, action) => {
       state.status = 'failed'
     },
   },
